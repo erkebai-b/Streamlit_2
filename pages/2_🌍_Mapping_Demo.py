@@ -1,25 +1,25 @@
-import streamlit as st
-import pandas as pd
-import pydeck as pdk
 from urllib.error import URLError
 
-st.set_page_config(page_title="Mapping Demo", page_icon="🌍")
+import pandas as pd
+import pydeck as pdk
+import streamlit as st
+import style
 
-st.markdown("# Mapping Demo")
-st.sidebar.header("Mapping Demo")
-st.write(
-    """This demo shows how to use
-[`st.pydeck_chart`](https://docs.streamlit.io/develop/api-reference/charts/st.pydeck_chart)
-to display geospatial data."""
+style.apply("Mapping Demo", "🌍")
+style.header(
+    "Demo 02",
+    "Mapping",
+    "Geospatial data with <code>st.pydeck_chart</code>. Toggle layers in the sidebar "
+    "to explore bike rentals and BART traffic across San Francisco.",
 )
+st.write("")
+
 
 @st.cache_data
 def from_data_file(filename):
-    url = (
-        "http://raw.githubusercontent.com/streamlit/"
-        "example-data/master/hello/v1/%s" % filename
-    )
+    url = "https://raw.githubusercontent.com/streamlit/example-data/master/hello/v1/%s" % filename
     return pd.read_json(url)
+
 
 try:
     ALL_LAYERS = {
@@ -31,12 +31,13 @@ try:
             elevation_scale=4,
             elevation_range=[0, 1000],
             extruded=True,
+            color_range=[[219, 234, 254], [147, 197, 253], [96, 165, 250], [59, 130, 246], [0, 113, 227], [30, 64, 175]],
         ),
         "Bart Stop Exits": pdk.Layer(
             "ScatterplotLayer",
             data=from_data_file("bart_stop_stats.json"),
             get_position=["lon", "lat"],
-            get_color=[200, 30, 0, 160],
+            get_color=[255, 55, 95, 170],
             get_radius="[exits]",
             radius_scale=0.05,
         ),
@@ -45,8 +46,8 @@ try:
             data=from_data_file("bart_stop_stats.json"),
             get_position=["lon", "lat"],
             get_text="name",
-            get_color=[0, 0, 0, 200],
-            get_size=15,
+            get_color=[29, 29, 31, 220],
+            get_size=14,
             get_alignment_baseline="'bottom'",
         ),
         "Outbound Flow": pdk.Layer(
@@ -54,8 +55,8 @@ try:
             data=from_data_file("bart_path_stats.json"),
             get_source_position=["lon", "lat"],
             get_target_position=["lon2", "lat2"],
-            get_source_color=[200, 30, 0, 160],
-            get_target_color=[200, 30, 0, 160],
+            get_source_color=[191, 90, 242, 170],
+            get_target_color=[0, 113, 227, 170],
             auto_highlight=True,
             width_scale=0.0001,
             get_width="outbound",
@@ -65,30 +66,21 @@ try:
     }
     st.sidebar.markdown("### Map Layers")
     selected_layers = [
-        layer
-        for layer_name, layer in ALL_LAYERS.items()
-        if st.sidebar.checkbox(layer_name, True)
+        layer for layer_name, layer in ALL_LAYERS.items() if st.sidebar.checkbox(layer_name, True)
     ]
     if selected_layers:
         st.pydeck_chart(
             pdk.Deck(
-                map_style="mapbox://styles/mapbox/light-v9",
-                initial_view_state={
-                    "latitude": 37.76,
-                    "longitude": -122.4,
-                    "zoom": 11,
-                    "pitch": 50,
-                },
+                map_provider="carto",
+                map_style="light",
+                initial_view_state={"latitude": 37.76, "longitude": -122.4, "zoom": 11, "pitch": 50},
                 layers=selected_layers,
-            )
+            ),
+            height=560,
         )
     else:
-        st.error("Please choose at least one layer above.")
+        st.error("Please choose at least one layer in the sidebar.")
 except URLError as e:
-    st.error(
-        """
-        **This demo requires internet access.**
-        Connection error: %s
-    """
-        % e.reason
-    )
+    st.error("**This demo requires internet access.**\n\nConnection error: %s" % e.reason)
+
+style.footer()
